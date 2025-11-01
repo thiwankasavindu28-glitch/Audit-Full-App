@@ -1,0 +1,28 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "dotenv -e .env -- node server.js",
+    "dev": "dotenv -e .env -- node --watch server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:migrate": "dotenv -e .env -- npx prisma migrate dev",
+    "prisma:push": "dotenv -e .env -- npx prisma db push"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv-cli": "^7.4.2"
+  },
+  "devDependencies": {
+    "prisma": "^6.18.0"
+  }
+}

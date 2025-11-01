@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model for the 5 Auditors (Admins)
+model Auditor {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?  // <-- ADD THIS LINE
+  password  String // This will be a hashed password
+  role      String   @default("Auditor") // e.g., "Auditor", "Lead Auditor"
+  joinDate  DateTime @default(now())
+  
+  // Relations
+  audits    Audit[] // An auditor can perform many audits
+}
+
+// Model for the people BEING AUDITED (they don't log in)
+model AuditedUser {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?  @unique
+  phone       String?
+  department  String
+  position    String
+  supervisor  String
+  
+  // Relations
+  audits      Audit[] // An audited user can have many audits
+}
+
+// Model for the Audit itself (the "session")
+model Audit {
+  id              String   @id @default(cuid())
+  status          String   @default("in-progress") // "in-progress" or "completed"
+  startDate       DateTime @default(now())
+  completedDate   DateTime?
+  reportSent      Boolean  @default(false) // For the dashboard
+  
+  // Relations
+  auditor         Auditor  @relation(fields: [auditorId], references: [id])
+  auditorId       String
+  
+  auditedUser     AuditedUser @relation(fields: [auditedUserId], references: [id])
+  auditedUserId   String
+  
+  errors          Error[]  // An audit has a list of errors
+}
+
+// Model for each individual Error
+model Error {
+  id                String   @id @default(cuid())
+  
+  // Foreign key to the Audit
+  audit             Audit    @relation(fields: [auditId], references: [id])
+  auditId           String
+  
+  // Error details from your App.jsx state
+  errorType         String
+  code              String   // e.g., "A", "F", "N/A"
+  name              String   // e.g., "Duplicate Cue Sheet"
+  points            Float
+  
+  processedDate     DateTime?
+  parisMVS          String?
+  userProcessedMVS  String?
+  existingParisMVS  String?
+  incorrectHeader   String?
+  correctHeader     String?
+  workType          String?
+  cueSequence       String?
+  addedWorkMVS      String?
+  existingWorkMVS   String?
+  incorrectValue    String?
+  correctValue      String?
+  incorrectName     String?
+  correctName       String?
+  correctIPI        String?
+  missingName       String?
+  additionalName    String?
+  notes             String?
+  customPoints      Float?
+}
