@@ -5,12 +5,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "dotenv -e .env -- node server.js",
-    "dev": "dotenv -e .env -- node --watch server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prisma:migrate": "dotenv -e .env -- npx prisma migrate dev",
-    "prisma:push": "dotenv -e .env -- npx prisma db push"
-  },
+  "start": "node server.js",
+  "build": "npx prisma generate && npx prisma migrate deploy",
+  "dev": "dotenv -e .env -- node --watch server.js",
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "prisma:migrate": "dotenv -e .env -- npx prisma migrate dev",
+  "prisma:push": "dotenv -e .env -- npx prisma db push"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
