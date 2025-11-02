@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, Plus, Edit, Trash2, Search, Mail, Phone, Building, Award, TrendingUp, TrendingDown, X, Check } from 'lucide-react';
 import api from '../services/api';
-import { useAnalytics } from '../context/AnalyticsContext';
+import { useAnalytics } from '../context/AnalyticsContext'; // <-- 1. RESTORED
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +15,7 @@ const UserManagement = () => {
     role: 'Auditor'
   });
 
+  // --- 2. RESTORED THIS LOGIC ---
   const {
     userPerformanceData: users, 
     isAnalyticsLoading: loading,
@@ -28,6 +29,7 @@ const UserManagement = () => {
   useEffect(() => {
     stableFetchAnalytics();
   }, [stableFetchAnalytics]);
+  // --- END OF RESTORED LOGIC ---
 
   const handleNewUserChange = (e) => {
     const { name, value } = e.target;
@@ -160,18 +162,43 @@ const UserManagement = () => {
                <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Total Users</p>
                <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{users.length}</p>
             </div>
-            {/* ... (Rest of your stats boxes - add dark: styles) ... */}
-        </div>
-
-        {/* Search Bar */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-6 dark:bg-slate-800 dark:border-slate-700">
-            {/* ... (Your Search Bar JSX) ... */}
+            {/* Search Bar */}
+             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 md:col-span-3">
+               <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Search Auditors</p>
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
+                  />
+                </div>
+             </div>
         </div>
 
         {/* Users Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading && users.length === 0 ? (
-            <p className="dark:text-slate-300">Loading...</p>
+            // Added a skeleton loader to match the "Loading..." state
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 dark:bg-slate-800 dark:border-slate-700 animate-pulse">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+                </div>
+                <div className="space-y-3 mb-4">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="h-16 bg-slate-50 dark:bg-slate-700 rounded-lg"></div>
+                  <div className="h-16 bg-slate-50 dark:bg-slate-700 rounded-lg"></div>
+                </div>
+                <div className="h-10 bg-slate-200 dark:bg-slate-700 rounded-lg w-full"></div>
+              </div>
+            ))
           ) : filteredUsers.map((user) => (
             <div key={user.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
               <div className="p-6">
@@ -209,7 +236,17 @@ const UserManagement = () => {
           ))}
         </div>
 
-        {/* ... (Your Empty State JSX) ... */}
+        {/* Empty State */}
+        {!loading && filteredUsers.length === 0 && (
+           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center dark:bg-slate-800 dark:border-slate-700">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4 dark:bg-slate-700">
+              <Users className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2 dark:text-white">No users found</h3>
+            <p className="text-slate-600 dark:text-slate-400">No auditors match your search. Click "Add New User" to create one.</p>
+          </div>
+        )}
+
       </div>
 
       {/* Modals */}

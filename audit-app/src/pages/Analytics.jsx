@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingDown, TrendingUp, Users, AlertTriangle, Award, Calendar, Download, Filter } from 'lucide-react';
+import { BarChart3, TrendingDown, TrendingUp, Users, AlertTriangle, Award, Calendar, Download, Filter, Star } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import * as XLSX from 'xlsx';
@@ -13,7 +13,7 @@ const Analytics = () => {
     errorTrendData,
     errorCategoryData,
     topErrorsData,
-    userPerformanceData,
+    auditedUserRanking, // <-- UPDATED
     fetchAnalyticsData,
     isAnalyticsLoading
   } = useAnalytics();
@@ -45,15 +45,19 @@ const Analytics = () => {
     const wsTopErrors = XLSX.utils.aoa_to_sheet([topErrorsHeader, ...topErrorsRows]);
     XLSX.utils.book_append_sheet(wb, wsTopErrors, "Top Errors");
     
-    const userPerfHeader = ['Auditor', 'Audits Completed', 'Total Errors', 'Avg Error Rate'];
-    const userPerfRows = userPerformanceData.map(user => [
+    // --- UPDATED EXPORT SECTION ---
+    const userRankingHeader = ['Rank', 'User Name', 'Department', 'Total Audits', 'Total Errors', 'Total Points'];
+    const userRankingRows = auditedUserRanking.map((user, i) => [
+      i + 1,
       user.name,
-      user.audits,
-      user.errors,
-      user.avgErrorRate
+      user.department,
+      user.totalAudits,
+      user.totalErrors,
+      user.totalPoints
     ]);
-    const wsUserPerf = XLSX.utils.aoa_to_sheet([userPerfHeader, ...userPerfRows]);
-    XLSX.utils.book_append_sheet(wb, wsUserPerf, "User Performance");
+    const wsUserRanking = XLSX.utils.aoa_to_sheet([userRankingHeader, ...userRankingRows]);
+    XLSX.utils.book_append_sheet(wb, wsUserRanking, "Audited User Ranking");
+    // --- END OF UPDATE ---
 
     const trendHeader = ['Date', 'Errors'];
     const trendRows = errorTrendData.map(day => [
@@ -199,44 +203,38 @@ const Analytics = () => {
             )}
         </div>
         
-        {/* User Performance Table */}
+        {/* --- NEW TABLE: Audited User Ranking --- */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-slate-900 p-6 border-b border-slate-200 dark:text-white dark:border-slate-700">Auditor Performance</h3>
-           {isAnalyticsLoading && userPerformanceData.length === 0 ? <p className="p-6 dark:text-slate-300">Loading...</p> : (
+          <h3 className="text-lg font-semibold text-slate-900 p-6 border-b border-slate-200 dark:text-white dark:border-slate-700">Audited User Ranking (By Error Points)</h3>
+           {isAnalyticsLoading && auditedUserRanking.length === 0 ? <p className="p-6 dark:text-slate-300">Loading...</p> : (
            <div className="overflow-x-auto">
              <table className="w-full">
                <thead className="bg-slate-50 border-b border-slate-200 dark:bg-slate-700/50 dark:border-slate-700">
                  <tr>
-                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Auditor</th>
-                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Audits Completed</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Rank</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">User</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Department</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Total Audits</th>
                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Total Errors</th>
-                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Avg Error Rate</th>
-                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Performance</th>
+                   <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase dark:text-slate-400">Total Points</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                 {userPerformanceData.map((user, index) => (
+                 {auditedUserRanking.map((user, index) => (
                    <tr key={index} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                      <td className="px-6 py-4">
-                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                           {user.name.split(' ').map(n => n[0]).join('')}
-                         </div>
-                         <span className="font-semibold text-slate-900 dark:text-white">{user.name}</span>
-                       </div>
+                        <span className={`font-bold ${index === 0 ? 'text-red-500' : index === 1 ? 'text-amber-500' : index === 2 ? 'text-blue-500' : 'text-slate-500'}`}>
+                            {index + 1}
+                        </span>
                      </td>
-                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{user.audits}</td>
-                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{user.errors}</td>
-                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{user.avgErrorRate}</td>
                      <td className="px-6 py-4">
-                       {user.avgErrorRate < 8 ? (
-                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Excellent</span>
-                       ) : user.avgErrorRate < 12 ? (
-                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Good</span>
-                       ) : (
-                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Needs Improvement</span>
-                       )}
+                       <div className="font-semibold text-slate-900 dark:text-white">{user.name}</div>
+                       <div className="text-sm text-slate-500 dark:text-slate-400">{user.email}</div>
                      </td>
+                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{user.department}</td>
+                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{user.totalAudits}</td>
+                     <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{user.totalErrors}</td>
+                     <td className="px-6 py-4 font-bold text-red-600">{user.totalPoints}</td>
                    </tr>
                  ))}
                </tbody>

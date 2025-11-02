@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FileText, Clock, CheckCircle, TrendingUp, Users, Calendar, Search, Filter, Mail, UserCheck, Eye } from 'lucide-react'; // <-- 1. Add Eye
+import {
+  Plus, FileText, Clock, CheckCircle, TrendingUp, Users, Calendar,
+  Search, Filter, Mail, UserCheck, Eye,
+  Sun, Moon, Cloud // <-- 1. IMPORTED ICONS
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../context/DashboardContext';
-import { useAuditDetail } from '../context/AuditDetailContext'; // <-- 2. IMPORT
+import { useAuditDetail } from '../context/AuditDetailContext';
 import api from '../services/api';
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState('my-audits');
+  const [activeTab, setActiveTab] =useState('my-audits');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { auditor } = useAuth();
-  const { openAuditDetail } = useAuditDetail(); // <-- 3. USE THE CONTEXT
+  const { openAuditDetail } = useAuditDetail();
+
+  // --- 2. GREETING LOGIC (Already in place) ---
+  const hours = new Date().getHours();
+  const greeting = hours < 12 ? 'Good morning' : hours < 18 ? 'Good afternoon' : 'Good evening';
+  const GreetingIcon = hours < 12 ? Sun : hours < 18 ? Cloud : Moon;
+  const firstName = auditor?.name ? auditor.name.split(' ')[0] : 'Auditor'; // Get first name
 
   const {
     stats,
@@ -21,8 +31,6 @@ const Dashboard = () => {
     recentlyAuditedUsers,
     fetchDashboardData
   } = useDashboard();
-  
-  // ... (rest of the component is unchanged until the "View Report" button) ...
   
   useEffect(() => {
     if (auditor) {
@@ -46,9 +54,11 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header (Now part of the page) */}
       <header className="bg-white border-b border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700">
-        {/* ... (header JSX unchanged) ... */}
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          
           <div className="flex items-center justify-between">
+            
+            {/* Left Side: Title AND Welcome Message */}
             <div className="flex items-center gap-4">
               <div className="bg-indigo-600 p-3 rounded-xl">
                 <FileText className="w-8 h-8 text-white" />
@@ -58,6 +68,17 @@ const Dashboard = () => {
                 <p className="text-slate-600 text-sm mt-1 dark:text-slate-400">Welcome back, {auditor?.name}</p>
               </div>
             </div>
+            
+            {/* --- 3. THIS IS THE UPDATED GREETING "ELLIPSE" --- */}
+            {/* Right Side: New Greeting (from your new example) */}
+            <div className="hidden md:flex items-center gap-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 px-6 py-3 rounded-full border border-indigo-500/30">
+              <GreetingIcon className="w-7 h-7 text-yellow-400" />
+              <span className="text-2xl font-bold text-white">
+                {greeting}, <span className="text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text">{firstName}</span>
+              </span>
+            </div>
+            {/* --- END OF UPDATE --- */}
+
           </div>
         </div>
       </header>
@@ -65,7 +86,6 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Action - Start New Audit */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-8 mb-8 text-white">
-          {/* ... (quick action JSX unchanged) ... */}
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">Start a New Audit</h2>
@@ -88,43 +108,42 @@ const Dashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-             {/* ... (stats grid JSX unchanged) ... */}
-             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
-               <div className="flex items-center justify-between">
-                 <div>
-                   <p className="text-sm text-slate-600 font-medium dark:text-slate-400">My Active Audits</p>
-                   <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.myActiveAudits || 0}</p>
-                 </div>
-                 <div className="bg-amber-100 p-3 rounded-lg"><Clock className="w-6 h-6 text-amber-600" /></div>
-               </div>
-             </div>
-             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
-               <div className="flex items-center justify-between">
-                 <div>
-                   <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Completed This Week</p>
-                   <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.myCompletedThisWeek || 0}</p>
-                 </div>
-                 <div className="bg-emerald-100 p-3 rounded-lg"><CheckCircle className="w-6 h-6 text-emerald-600" /></div>
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium dark:text-slate-400">My Active Audits</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.myActiveAudits || 0}</p>
                 </div>
-             </div>
-             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Team Completed Audits</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.totalCompletedAudits || 0}</p>
-                  </div>
-                  <div className="bg-blue-100 p-3 rounded-lg"><FileText className="w-6 h-6 text-blue-600" /></div>
+                <div className="bg-amber-100 p-3 rounded-lg"><Clock className="w-6 h-6 text-amber-600" /></div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Completed This Week</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.myCompletedThisWeek || 0}</p>
                 </div>
-             </div>
-             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Active Auditors</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.totalAuditorsActive || 0}</p>
-                  </div>
-                  <div className="bg-purple-100 p-3 rounded-lg"><UserCheck className="w-6 h-6 text-purple-600" /></div>
+                <div className="bg-emerald-100 p-3 rounded-lg"><CheckCircle className="w-6 h-6 text-emerald-600" /></div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Team Completed Audits</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.totalCompletedAudits || 0}</p>
                 </div>
-             </div>
+                <div className="bg-blue-100 p-3 rounded-lg"><FileText className="w-6 h-6 text-blue-600" /></div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 hover:shadow-md transition-shadow dark:bg-slate-800 dark:border-slate-700 dark:hover:shadow-indigo-500/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Active Auditors</p>
+                  <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{stats.totalAuditorsActive || 0}</p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-lg"><UserCheck className="w-6 h-6 text-purple-600" /></div>
+              </div>
+            </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -133,8 +152,7 @@ const Dashboard = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {/* Tabs and Search */}
               <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-                 {/* ... (tabs and search JSX unchanged) ... */}
-                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex gap-2">
                         <button
                           onClick={() => setActiveTab('my-audits')}
@@ -167,13 +185,12 @@ const Dashboard = () => {
                           className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg w-full sm:w-64 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
                         />
                     </div>
-                </div>
+                  </div>
               </div>
 
               {/* Audits List */}
               <div className="divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredAudits.length === 0 ? (
-                  // ... (empty state JSX unchanged) ...
                   <div className="py-12 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4 dark:bg-slate-700">
                       <FileText className="w-8 h-8 text-slate-400" />
@@ -184,32 +201,31 @@ const Dashboard = () => {
                 ) : (
                   filteredAudits.map((audit) => (
                     <div key={audit.id} className="p-6 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/50">
-                      {/* ... (audit card JSX unchanged) ... */}
-                       <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between">
                           <div className="flex items-start gap-4 flex-1">
                               <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold">
-                                  {audit.auditedUser.name.split(' ').map(n => n[0]).join('')}
+                                {audit.auditedUser.name.split(' ').map(n => n[0]).join('')}
                               </div>
                               <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-1">
-                                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">{audit.id}</h3>
-                                      {audit.status === 'completed' ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                                          <CheckCircle size={12} />
-                                          Completed
-                                        </span>
-                                      ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                          <Clock size={12} />
-                                          In Progress
-                                        </span>
-                                      )}
-                                      {audit.reportSent && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                          <Mail size={12} />
-                                          Report Sent
-                                        </span>
-                                      )}
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{audit.id}</h3>
+                                    {audit.status === 'completed' ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                        <CheckCircle size={12} />
+                                        Completed
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                        <Clock size={12} />
+                                        In Progress
+                                      </span>
+                                    )}
+                                    {audit.reportSent && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <Mail size={12} />
+                                        Report Sent
+                                      </span>
+                                    )}
                                   </div>
                                   <p className="text-slate-700 font-semibold mb-1 dark:text-slate-200">User: {audit.auditedUser.name}</p>
                                   <p className="text-sm text-slate-600 mb-2 dark:text-slate-400">Department: {audit.auditedUser.department}</p>
@@ -231,31 +247,30 @@ const Dashboard = () => {
                                   <p className="text-xs text-slate-600 dark:text-slate-400">Points</p>
                               </div>
                           </div>
-                      </div>
-                      <div className="mt-4 flex gap-2">
-                        {audit.status === 'in-progress' ? (
-                          <Link to={`/audit-workspace/${audit.id}`} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
-                            Continue Audit
-                          </Link>
-                        ) : (
-                          <>
-                            {/* --- 4. THIS IS THE FIX --- */}
-                            <button 
-                              onClick={() => openAuditDetail(audit)}
-                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 flex items-center gap-2"
-                            >
-                              <Eye size={16} />
-                              View Details
-                            </button>
-                            {!audit.reportSent && (
-                              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                                <Mail size={16} />
-                                Send to User
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          {audit.status === 'in-progress' ? (
+                            <Link to={`/audit-workspace/${audit.id}`} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                              Continue Audit
+                            </Link>
+                          ) : (
+                            <>
+                              <button 
+                                onClick={() => openAuditDetail(audit)}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 flex items-center gap-2"
+                              >
+                                <Eye size={16} />
+                                View Details
                               </button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                              {!audit.reportSent && (
+                                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
+                                  <Mail size={16} />
+                                  Send to User
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                     </div>
                   ))
                 )}
@@ -265,7 +280,6 @@ const Dashboard = () => {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* ... (sidebar components JSX unchanged) ... */}
             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2 dark:text-white">
                     <UserCheck className="w-5 h-5 text-indigo-600" />

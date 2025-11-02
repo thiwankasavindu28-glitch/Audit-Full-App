@@ -24,35 +24,47 @@ export const DashboardProvider = ({ children }) => {
     
     setLoading(true);
     try {
-      const [
-        myActiveRes,
-        myCompletedRes,
-        auditorsRes,
-        usersRes,
-        statsRes
-      ] = await Promise.all([
-        api.get('/audits?auditorId=me&status=in-progress'),
-        api.get('/audits?auditorId=me&status=completed'),
+      // --- FIX 1: Load lightweight stats FIRST ---
+      // These are fast count/aggregate queries.
+      const [auditorsRes, statsRes] = await Promise.all([
         api.get('/auditors'),
-        api.get('/audits/recent-users'),
         api.get('/analytics/stats')
       ]);
 
+      // Set stats data immediately so the page updates
       const stats = {
-        myActiveAudits: myActiveRes.data.length,
-        myCompletedThisWeek: myCompletedRes.data.filter(a => a.completedDate && new Date(a.completedDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
         totalCompletedAudits: statsRes.data.totalCompletedAudits,
         totalActiveAudits: statsRes.data.totalActiveAudits,
         totalAuditorsActive: auditorsRes.data.length,
       };
 
-      setData({
-        stats: stats,
+      setData(prevData => ({
+        ...prevData,
+        stats: { ...prevData.stats, ...stats },
+        auditors: auditorsRes.data,
+      }));
+
+      // --- FIX 2: Load heavy list data SECOND ---
+      // These are slower queries that fetch full lists.
+      const [myActiveRes, myCompletedRes, usersRes] = await Promise.all([
+        api.get('/audits?auditorId=me&status=in-progress'),
+        api.get('/audits?auditorId=me&status=completed'),
+        api.get('/audits/recent-users')
+      ]);
+
+      // Calculate the rest of the stats and set all data
+      const myStats = {
+        myActiveAudits: myActiveRes.data.length,
+        myCompletedThisWeek: myCompletedRes.data.filter(a => a.completedDate && new Date(a.completedDate) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
+      };
+
+      setData(prevData => ({
+        ...prevData,
+        stats: { ...prevData.stats, ...myStats },
         myAudits: myActiveRes.data,
         completedAudits: myCompletedRes.data,
-        auditors: auditorsRes.data,
         recentlyAuditedUsers: usersRes.data,
-      });
+      }));
 
     } catch (err) {
       console.error("Failed to load dashboard data", err);

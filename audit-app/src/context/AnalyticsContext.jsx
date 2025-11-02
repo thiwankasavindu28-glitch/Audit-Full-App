@@ -11,7 +11,8 @@ const initialState = {
   errorTrendData: [],
   errorCategoryData: [],
   topErrorsData: [],
-  userPerformanceData: [],
+  auditedUserRanking: [], // <-- For Analytics Page
+  userPerformanceData: [], // <-- For User Management Page
 };
 
 export const AnalyticsProvider = ({ children }) => {
@@ -20,9 +21,6 @@ export const AnalyticsProvider = ({ children }) => {
 
   // 2. Create one function to fetch ALL analytics data in parallel
   const fetchAnalyticsData = useCallback(async () => {
-    // --- THIS IS THE FIX ---
-    // We check 'loading' *inside* the function, but do not
-    // put it in the dependency array.
     if (loading) return; 
     setLoading(true);
     try {
@@ -31,13 +29,15 @@ export const AnalyticsProvider = ({ children }) => {
         trendRes,
         categoryRes,
         topErrorsRes,
-        userPerfRes
+        userPerfRes,
+        userRankingRes // <-- ADDED
       ] = await Promise.all([
         api.get('/analytics/stats'),
         api.get('/analytics/error-trend'),
         api.get('/analytics/category-distribution'),
         api.get('/analytics/top-errors'),
-        api.get('/analytics/user-performance')
+        api.get('/analytics/user-performance'), // <-- RESTORED
+        api.get('/analytics/audited-user-ranking') // <-- ADDED
       ]);
 
       setData({
@@ -45,17 +45,18 @@ export const AnalyticsProvider = ({ children }) => {
         errorTrendData: trendRes.data,
         errorCategoryData: categoryRes.data,
         topErrorsData: topErrorsRes.data,
-        userPerformanceData: userPerfRes.data,
+        userPerformanceData: userPerfRes.data, // <-- RESTORED
+        auditedUserRanking: userRankingRes.data, // <-- ADDED
       });
 
     } catch (err) {
       console.error("Failed to load analytics data", err);
     }
     setLoading(false);
-  }, []); // <-- REMOVED 'loading' from this array
+  }, [loading]); // <-- This dependency is correct
 
   const value = {
-    ...data, // Spread all data (keyMetrics, etc.)
+    ...data, // Spread all data
     fetchAnalyticsData,
     isAnalyticsLoading: loading,
   };

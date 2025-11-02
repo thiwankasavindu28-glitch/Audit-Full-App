@@ -15,7 +15,7 @@ model Auditor {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
-  phone     String?  // <-- ADD THIS LINE
+  phone     String?
   password  String // This will be a hashed password
   role      String   @default("Auditor") // e.g., "Auditor", "Lead Auditor"
   joinDate  DateTime @default(now())
@@ -54,6 +54,12 @@ model Audit {
   auditedUserId   String
   
   errors          Error[]  // An audit has a list of errors
+
+  // --- ADDED INDICES ---
+  @@index([status])
+  @@index([auditorId])
+  @@index([auditedUserId])
+  @@index([auditorId, status]) // For dashboard "my-audits"
 }
 
 // Model for each individual Error
@@ -89,4 +95,9 @@ model Error {
   additionalName    String?
   notes             String?
   customPoints      Float?
+
+  // --- ADDED INDICES ---
+  @@index([auditId])
+  @@index([errorType])
+  @@index([name])
 }
