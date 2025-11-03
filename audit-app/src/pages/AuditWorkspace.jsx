@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // <-- IMPORT useMemo
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Trash2, FileText, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, FileText, Download, ArrowLeft, ClipboardX } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import api from '../services/api'; 
 import { useModal } from '../context/ModalContext'; 
+import { SearchableDropdown } from '../components/SearchableDropdown'; // <-- 1. IMPORT NEW COMPONENT
 
-// ... (Error definitions are unchanged) ...
+// ... (errorCategories, getErrorByName, etc. are unchanged) ...
 const errorCategories = {
     'General Errors': [
       { code: 'A', name: 'Duplicate Cue Sheet Processed as New', points: 100 },
@@ -55,27 +56,42 @@ if (error.payable) return `(${error.nonPayable} / ${error.payable} pts)`;
 return `(${error.points} pts)`;
 };
 
+const initialErrorState = {
+  errorType: '',
+  processedDate: new Date().toISOString().split('T')[0],
+  parisMVS: '', userProcessedMVS: '', existingParisMVS: '',
+  incorrectHeader: '', correctHeader: '', workType: 'Payable',
+  cueSequence: '', addedWorkMVS: '', existingWorkMVS: '',
+  incorrectValue: '', correctValue: '', incorrectName: '',
+  correctName: '', correctIPI: '', missingName: '',
+  additionalName: '', notes: '', customPoints: ''
+};
+
 
 const AuditWorkspace = () => {
   const { alert } = useModal(); 
   const [userName, setUserName] = useState('');
   const [auditDate, setAuditDate] = useState('');
   const [errors, setErrors] = useState([]);
-  const [currentError, setCurrentError] = useState({
-    errorType: '',
-    processedDate: new Date().toISOString().split('T')[0],
-    parisMVS: '', userProcessedMVS: '', existingParisMVS: '',
-    incorrectHeader: '', correctHeader: '', workType: 'Payable',
-    cueSequence: '', addedWorkMVS: '', existingWorkMVS: '',
-    incorrectValue: '', correctValue: '', incorrectName: '',
-    correctName: '', correctIPI: '', missingName: '',
-    additionalName: '', notes: '', customPoints: ''
-  });
+  const [currentError, setCurrentError] = useState(initialErrorState);
+  const [formError, setFormError] = useState(null);
 
   const { auditId } = useParams();
   const navigate = useNavigate();
 
+  // --- 2. NEW: Format the errors for the dropdown ---
+  // We use useMemo so this only runs once, not on every render
+  const errorOptions = useMemo(() => {
+    return Object.values(errorCategories).flat().map(err => ({
+      value: err.name, // The value we save (e.g., "Duplicate Work")
+      label: err.name, // The text to display/search
+      code: err.code,
+      points: getPointText(err),
+    }));
+  }, []);
+
   useEffect(() => {
+    // ... (fetchAuditData function is unchanged) ...
     const fetchAuditData = async () => {
       try {
         const { data: auditData } = await api.get(`/audits/${auditId}`);
@@ -90,22 +106,35 @@ const AuditWorkspace = () => {
     };
     fetchAuditData();
   }, [auditId, navigate, alert]);
+  
+  const resetForm = () => {
+    // ... (this function is unchanged) ...
+    setCurrentError(initialErrorState);
+    setFormError(null);
+  }
 
   const addError = async () => {
-    // ... (this function is unchanged)
+    // ... (this function is unchanged) ...
+    setFormError(null); 
     const { errorType, workType } = currentError;
+    
     if (!errorType) {
-      await alert('Please select an Error Type.');
+      setFormError('Please select an Error Type.');
       return;
     }
     
     let errorInfo = getErrorByName(errorType);
+    if (!errorInfo) {
+      setFormError('Invalid Error Type selected. Please choose from the list.');
+      return;
+    }
+    
     let points = 0;
 
     if (errorType === 'Other Error') {
         points = parseFloat(currentError.customPoints);
         if (isNaN(points)) {
-            await alert('Please enter a valid number for custom points.');
+            setFormError('Please enter a valid number for custom points.'); 
             return;
         }
     } else if (errorInfo.payable) {
@@ -127,21 +156,35 @@ const AuditWorkspace = () => {
     try {
       const { data: savedError } = await api.post(`/audits/${auditId}/errors`, newErrorData);
       setErrors([...errors, savedError]);
+      
       setCurrentError({
-        errorType: '', processedDate: new Date().toISOString().split('T')[0], parisMVS: '', userProcessedMVS: '',
-        existingParisMVS: '', incorrectHeader: '', correctHeader: '', workType: 'Payable', cueSequence: '', addedWorkMVS: '', existingWorkMVS: '',
-        incorrectValue: '', correctValue: '', incorrectName: '', correctName: '', correctIPI: '',
-        missingName: '', additionalName: '', notes: '', customPoints: ''
+        ...currentError, 
+        userProcessedMVS: '',
+        existingParisMVS: '',
+        incorrectHeader: '',
+        correctHeader: '',
+        cueSequence: '',
+        addedWorkMVS: '',
+        existingWorkMVS: '',
+        incorrectValue: '',
+        correctValue: '',
+        incorrectName: '',
+        correctName: '',
+        correctIPI: '',
+        missingName: '',
+        additionalName: '',
+        notes: '',
+        customPoints: ''
       });
       
     } catch (err) {
       console.error("Failed to add error", err);
-      await alert("Failed to save error.");
+      setFormError("Failed to save error. Please try again.");
     }
   };
 
   const removeError = async (id) => {
-    // ... (this function is unchanged)
+    // ... (this function is unchanged) ...
     try {
       await api.delete(`/audits/errors/${id}`);
       setErrors(errors.filter(e => e.id !== id));
@@ -154,7 +197,7 @@ const AuditWorkspace = () => {
   const calculateTotalPoints = () => errors.reduce((sum, error) => sum + (error.points || 0), 0).toFixed(2);
 
   const generateReport = async () => { 
-    // ... (this function is unchanged)
+    // ... (this function is unchanged) ...
     if (!userName) {
       await alert('Please enter the User Name before generating a report.');
       return;
@@ -213,7 +256,7 @@ const AuditWorkspace = () => {
   };
 
   const completeAudit = async () => {
-    // ... (this function is unchanged)
+    // ... (this function is unchanged) ...
     try {
         await api.put(`/audits/${auditId}`, { status: 'completed' });
         await alert("Audit marked as complete!");
@@ -225,6 +268,7 @@ const AuditWorkspace = () => {
   }
 
   const renderConditionalFields = () => {
+    // ... (this function is unchanged) ...
     const { errorType } = currentError;
     if (!errorType) return null;
     
@@ -316,7 +360,7 @@ const AuditWorkspace = () => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 dark:bg-slate-900 dark:text-slate-200">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* NEW HEADER with Back Button */}
+        {/* ... (Header is unchanged) ... */}
         <header className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -344,14 +388,16 @@ const AuditWorkspace = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-600 mb-1 dark:text-slate-300">Error Type *</label>
-                  <select value={currentError.errorType} onChange={(e) => setCurrentError({ ...currentError, errorType: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                    <option value="">Select an error...</option>
-                    {Object.entries(errorCategories).map(([category, catErrors]) => (
-                      <optgroup key={category} label={category} className="font-bold">
-                        {catErrors.map((error) => <option key={error.name} value={error.name}>{error.code} - {error.name} {getPointText(error)}</option>)}
-                      </optgroup>
-                    ))}
-                  </select>
+                  
+                  {/* --- 3. REPLACEMENT: Use the new component --- */}
+                  <SearchableDropdown
+                    placeholder="Select an error..."
+                    options={errorOptions}
+                    value={currentError.errorType}
+                    onChange={(value) => setCurrentError({ ...currentError, errorType: value })}
+                  />
+                  {/* --- END OF REPLACEMENT --- */}
+                  
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-slate-600 mb-1 dark:text-slate-300">Cue Sheet Processed Day</label>
@@ -360,10 +406,36 @@ const AuditWorkspace = () => {
                 {renderConditionalFields()}
               </div>
               <textarea value={currentError.notes} onChange={(e) => setCurrentError({ ...currentError, notes: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-md transition focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400" rows="3" placeholder="Additional notes..."></textarea>
-              <button onClick={addError} className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all">
-                <Plus size={20} /> Add Error
-              </button>
+              
+              {formError && (
+                <div className="my-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm dark:bg-red-900/20 dark:border-red-700 dark:text-red-300">
+                  {formError}
+                </div>
+              )}
+              
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <button 
+                  type="button"
+                  onClick={addError} 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all"
+                >
+                  <Plus size={20} /> Add Error
+                </button>
+                
+                <button 
+                  type="button" 
+                  onClick={resetForm}
+                  title="Clear all fields"
+                  className="w-full sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                >
+                  <ClipboardX size={20} />
+                  Clear Form
+                </button>
+              </div>
+              
             </div>
+            
+            {/* ... (Error list rendering is unchanged) ... */}
             {errors.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
@@ -398,6 +470,7 @@ const AuditWorkspace = () => {
             )}
           </section>
 
+          {/* ... (Aside/Sidebar is unchanged) ... */}
           <aside className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                 <h2 className="text-xl font-semibold text-slate-900 mb-4 pb-4 border-b border-slate-200 dark:text-white dark:border-slate-700">Audit Details</h2>
