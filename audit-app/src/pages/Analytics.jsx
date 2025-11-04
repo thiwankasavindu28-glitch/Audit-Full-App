@@ -13,7 +13,7 @@ const Analytics = () => {
     errorTrendData,
     errorCategoryData,
     topErrorsData,
-    auditedUserRanking, // <-- UPDATED
+    auditedUserRanking, 
     fetchAnalyticsData,
     isAnalyticsLoading
   } = useAnalytics();
@@ -23,6 +23,7 @@ const Analytics = () => {
   }, [fetchAnalyticsData, timeRange]);
 
   const handleExportReport = () => {
+    // ... (this function is unchanged) ...
     const wb = XLSX.utils.book_new();
 
     const metricsData = [
@@ -45,7 +46,6 @@ const Analytics = () => {
     const wsTopErrors = XLSX.utils.aoa_to_sheet([topErrorsHeader, ...topErrorsRows]);
     XLSX.utils.book_append_sheet(wb, wsTopErrors, "Top Errors");
     
-    // --- UPDATED EXPORT SECTION ---
     const userRankingHeader = ['Rank', 'User Name', 'Department', 'Total Audits', 'Total Errors', 'Total Points'];
     const userRankingRows = auditedUserRanking.map((user, i) => [
       i + 1,
@@ -57,7 +57,6 @@ const Analytics = () => {
     ]);
     const wsUserRanking = XLSX.utils.aoa_to_sheet([userRankingHeader, ...userRankingRows]);
     XLSX.utils.book_append_sheet(wb, wsUserRanking, "Audited User Ranking");
-    // --- END OF UPDATE ---
 
     const trendHeader = ['Date', 'Errors'];
     const trendRows = errorTrendData.map(day => [
@@ -83,6 +82,7 @@ const Analytics = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-700">
+        {/* ... (header is unchanged) ... */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -118,6 +118,7 @@ const Analytics = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* ... (key metrics are unchanged) ... */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <p className="text-sm text-slate-600 font-medium dark:text-slate-400">Total Errors</p>
             <p className="text-3xl font-bold text-slate-900 mt-2 dark:text-white">{keyMetrics.totalErrors || 0}</p>
@@ -161,7 +162,18 @@ const Analytics = () => {
             {isAnalyticsLoading && errorCategoryData.length === 0 ? <p className="py-10 text-center text-slate-500 dark:text-slate-400">Loading chart...</p> : (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={errorCategoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                {/* --- THIS IS THE FIX --- */}
+                <Pie 
+                  data={errorCategoryData} 
+                  dataKey="value" 
+                  nameKey="name" 
+                  cx="50%" 
+                  cy="50%" 
+                  outerRadius={100} 
+                  label
+                  isAnimationActive={false} // <-- ADDED THIS PROP
+                >
+                {/* --- END OF FIX --- */}
                   {errorCategoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -176,6 +188,7 @@ const Analytics = () => {
 
         {/* Top Errors Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 dark:bg-slate-800 dark:border-slate-700">
+            {/* ... (top errors table is unchanged) ... */}
             <h3 className="text-lg font-semibold text-slate-900 p-6 border-b border-slate-200 dark:text-white dark:border-slate-700">Most Common Errors</h3>
             {isAnalyticsLoading && topErrorsData.length === 0 ? <p className="p-6 dark:text-slate-300">Loading...</p> : (
             <div className="overflow-x-auto">
@@ -203,8 +216,9 @@ const Analytics = () => {
             )}
         </div>
         
-        {/* --- NEW TABLE: Audited User Ranking --- */}
+        {/* Audited User Ranking */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+          {/* ... (user ranking table is unchanged) ... */}
           <h3 className="text-lg font-semibold text-slate-900 p-6 border-b border-slate-200 dark:text-white dark:border-slate-700">Audited User Ranking (By Error Points)</h3>
            {isAnalyticsLoading && auditedUserRanking.length === 0 ? <p className="p-6 dark:text-slate-300">Loading...</p> : (
            <div className="overflow-x-auto">
